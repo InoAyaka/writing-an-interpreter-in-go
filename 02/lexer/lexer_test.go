@@ -1,7 +1,7 @@
 package lexer
 
 import (
-	"Book_waiig/01/token"
+	"Book_waiig/02/token"
 	"testing"
 )
 
