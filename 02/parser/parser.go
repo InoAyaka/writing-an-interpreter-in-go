@@ -7,6 +7,23 @@ import (
 	"fmt"
 )
 
+const (
+	//優先順位
+	_ int = iota
+	LOWEST
+	EQUALS      //==
+	LESSGREATER // > または <
+	SUM         // +
+	PRODUCT     // *
+	PREFIX      //-X または !X
+	CALL        //myFunvtion(X)
+)
+
+type (
+	prefixParseFn func() ast.Expression               //前置構文解析関数
+	infixParseFn  func(ast.Expression) ast.Expression //中置構文解析関数
+)
+
 type Parser struct {
 	l      *lexer.Lexer
 	errors []string
@@ -24,11 +41,23 @@ func New(l *lexer.Lexer) *Parser {
 		errors: []string{},
 	}
 
+	//構文解析関数の登録
+	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
+	p.registerPrefix(token.IDNET, p.parseIdentifier)
+
 	//2つトークンを読み込む。curToken と peekToken の両方がセットされる
 	p.nextToken()
 	p.nextToken()
 
 	return p
+}
+
+func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {
+	p.prefixParseFns[tokenType] = fn
+}
+
+func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
+	p.infixParseFns[tokenType] = fn
 }
 
 func (p *Parser) Errors() []string {
@@ -69,7 +98,7 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.RETURN:
 		return p.parseReturnStatement()
 	default:
-		return nil
+		return p.parseExpressionStatement()
 	}
 }
 
@@ -97,12 +126,12 @@ func (p *Parser) curTokenIs(t token.TokenType) bool {
 	return p.curToken.Type == t
 }
 
-func (p *Parser) peelTokenIs(t token.TokenType) bool {
+func (p *Parser) peekTokenIs(t token.TokenType) bool {
 	return p.peekToken.Type == t
 }
 
 func (p *Parser) expectPeek(t token.TokenType) bool {
-	if p.peelTokenIs(t) {
+	if p.peekTokenIs(t) {
 		p.nextToken()
 		return true
 	} else {
@@ -122,15 +151,29 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	return stmt
 }
 
-type (
-	prefixParseFn func() ast.Expression
-	infixParseFn  func(ast.Expression) ast.Expression
-)
+func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	stmt := &ast.ExpressionStatement{Token: p.curToken}
 
-func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {
-	p.prefixParseFns[tokenType] = fn
+	stmt.Expression = p.parseExpression(LOWEST)
+
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+
+	return stmt
 }
 
-func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
-	p.infixParseFns[tokenType] = fn
+func (p *Parser) parseExpression(precedence int) ast.Expression {
+	//p.curToken.Typeに関連付けされた構文解析関数があれば取得して呼び出す
+	prefix := p.prefixParseFns[p.curToken.Type]
+	if prefix == nil {
+		return nil
+	}
+	leftExp := prefix()
+
+	return leftExp
+}
+
+func (p *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 }
