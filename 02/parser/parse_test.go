@@ -194,6 +194,7 @@ func TestParsingPrefixExpression(t *testing.T) {
 		l := lexer.New(pt.input)
 		p := New(l)
 		program := p.ParserProgram()
+		checkParseErrors(t, p)
 
 		if len(program.Statements) != 1 {
 			t.Fatalf("program.Statements dose not contain %d statements. got=%d\n",
