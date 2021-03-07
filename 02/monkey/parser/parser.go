@@ -1,10 +1,10 @@
 package parser
 
 import (
-	"Book_waiig/02/ast"
-	"Book_waiig/02/lexer"
-	"Book_waiig/02/token"
 	"fmt"
+	"monkey/ast"
+	"monkey/lexer"
+	"monkey/token"
 	"strconv"
 )
 
@@ -101,7 +101,7 @@ func (p *Parser) nextToken() {
 	p.peekToken = p.l.NextToken()
 }
 
-func (p *Parser) ParserProgram() *ast.Program {
+func (p *Parser) ParseProgram() *ast.Program {
 	program := &ast.Program{}
 	program.Statements = []ast.Statement{}
 

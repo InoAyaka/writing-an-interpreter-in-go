@@ -1,11 +1,11 @@
 package repl
 
 import (
-	"Book_waiig/01/lexer"
-	"Book_waiig/01/token"
 	"bufio"
 	"fmt"
 	"io"
+	"monkey/lexer"
+	"monkey/token"
 )
 
 const PROMPT = ">> "

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"Book_waiig/01/repl"
 	"fmt"
+	"monkey/repl"
 	"os"
 	"os/user"
 )
